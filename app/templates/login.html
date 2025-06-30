@@ -2,17 +2,17 @@
 <html>
 <head>
   <title>ログイン</title>
-  <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-  <h2>ログイン画面</h2>
+  {% include "header.html" %}
+  <h2>ログイン</h2>
   <form method="post" action="/login">
-    <input type="text" name="username" placeholder="ユーザー名" required />
-    <input type="password" name="password" placeholder="パスワード" required />
+    <label for="username">ユーザー名:</label>
+    <input type="text" id="username" name="username" required><br>
+    <label for="password">パスワード:</label>
+    <input type="password" id="password" name="password" required><br>
     <button type="submit">ログイン</button>
-    {% if error %}
-      <p style="color:red;">{{ error }}</p>
-    {% endif %}
   </form>
+  {% if error %}<p style="color:red">{{ error }}</p>{% endif %}
 </body>
 </html>

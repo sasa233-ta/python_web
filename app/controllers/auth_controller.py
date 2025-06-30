@@ -5,6 +5,7 @@ from passlib.hash import bcrypt
 from app.core.config import templates
 from app.database import SessionLocal
 from app.models.user_model import User
+from app.utils.auth_utils import set_login_session, clear_login_session
 
 router = APIRouter()
 
@@ -32,5 +33,13 @@ def login_user(request: Request, username: str = Form(...), password: str = Form
     db = next(get_db())
     user = db.query(User).filter(User.username == username).first()
     if user and bcrypt.verify(password, user.hashed_password):
-        return RedirectResponse(url="/dashboard", status_code=303)
+        response = RedirectResponse(url="/dashboard", status_code=303)
+        set_login_session(response, user.id)
+        return response
     return templates.TemplateResponse("login.html", {"request": request, "error": "ログイン失敗"})
+
+@router.get("/logout")
+def logout_user(request: Request):
+    response = RedirectResponse(url="/login", status_code=303)
+    clear_login_session(response)
+    return response
