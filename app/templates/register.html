@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head><title>ユーザー登録</title></head>
+<body>
+  <h2>新規ユーザー登録</h2>
+  <form method="post" action="/register">
+    <input type="text" name="username" placeholder="ユーザー名" required />
+    <input type="password" name="password" placeholder="パスワード" required />
+    <button type="submit">登録</button>
+    {% if error %}<p style="color:red;">{{ error }}</p>{% endif %}
+  </form>
+  <p><a href="/login">ログインはこちら</a></p>
+</body>
+</html>

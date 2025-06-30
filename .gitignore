@@ -1,0 +1,60 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# VSCode settings
+.vscode/
+
+# SQLite DB
+*.db
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# その他
+*.swp
+*.bak
+
+# 環境変数ファイル
+.env
+.env.*
+
+# テスト出力
+htmlcov/
+coverage.xml
+.cache/
+
+# pip
+pip-log.txt
+pip-delete-this-directory.txt
+
+# dist
+build/
+dist/
+*.egg-info/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+
+# pytest
+.pytest_cache/
+
+# その他
+.idea/
