@@ -2,9 +2,12 @@ from fastapi import APIRouter, Request, Form
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from passlib.hash import bcrypt
+from datetime import datetime
 from app.core.config import templates
 from app.database import SessionLocal
 from app.models.user_model import User
+from app.models.login_history_model import LoginHistory
+from app.utils.auth_utils import set_login_session, clear_login_session
 
 router = APIRouter()
 
@@ -32,5 +35,17 @@ def login_user(request: Request, username: str = Form(...), password: str = Form
     db = next(get_db())
     user = db.query(User).filter(User.username == username).first()
     if user and bcrypt.verify(password, user.hashed_password):
-        return RedirectResponse(url="/dashboard", status_code=303)
+        # ログイン履歴を記録
+        login_history = LoginHistory(user_id=user.id, username=user.username, login_at=datetime.utcnow())
+        db.add(login_history)
+        db.commit()
+        response = RedirectResponse(url="/dashboard", status_code=303)
+        set_login_session(response, user.id, user.username)
+        return response
     return templates.TemplateResponse("login.html", {"request": request, "error": "ログイン失敗"})
+
+@router.get("/logout")
+def logout_user(request: Request):
+    response = RedirectResponse(url="/login", status_code=303)
+    clear_login_session(response)
+    return response
