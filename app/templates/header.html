@@ -19,14 +19,17 @@
           <li class="nav-item">
             <a class="nav-link" href="/dashboard">ダッシュボード</a>
           </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/login_history">ログイン履歴</a>
+          </li>
           {% if request.cookies.user_id %}
           <li class="nav-item">
             <a class="nav-link" href="/logout">ログアウト</a>
           </li>
           {% endif %}
         </ul>
-        {% if request.cookies.user_id %}
-          <span class="navbar-text ms-3">ようこそ{{ request.cookies.user_id }}さん</span>
+        {% if request.cookies.username %}
+          <span class="navbar-text ms-3">ようこそ{{ request.cookies.user_id }}：{{ request.cookies.username }}さん</span>
         {% endif %}
       </div>
     </div>
