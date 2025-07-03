@@ -1,12 +1,13 @@
+from datetime import datetime, date
 import re
-
+import yfinance as yf
+from app.database import SessionLocal
+from app.models.stock_search_history_model import StockSearchHistory
 
 def extract_stock_info(info):
-    # 日本語企業概要の取得
     summary = info.get("longBusinessSummary")
     if summary and "。" in summary:
         summary = summary.split("。", 1)[0] + "。"
-    # 従業員数カンマ区切り
     employees = info.get("fullTimeEmployees")
     if employees is not None:
         employees = f"{employees:,}"
@@ -32,14 +33,39 @@ def extract_stock_info(info):
         "企業概要": summary,
     }
 
-
 def normalize_jp_symbol(symbol: str) -> str:
     symbol = symbol.strip().upper()
-    # 4桁数字のみなら.Tを付与
     if re.fullmatch(r"\d{4}", symbol):
         return symbol + ".T"
-    # 既に.T付きならそのまま
     if symbol.endswith(".T"):
         return symbol
-    # それ以外はエラー
     raise ValueError("日本株は4桁コードまたは4桁+.Tで入力してください")
+
+def stock_search_service(symbol: str, user_id: str):
+    db = SessionLocal()
+    try:
+        today = date.today()
+        count = db.query(StockSearchHistory).filter(
+            StockSearchHistory.user_id == user_id,
+            StockSearchHistory.searched_at >= datetime(today.year, today.month, today.day)
+        ).count()
+        if count >= 100:
+            return {"success": False, "error": "1日の検索上限（100回）に達しました"}
+        try:
+            jp_symbol = normalize_jp_symbol(symbol)
+        except ValueError as e:
+            return {"success": False, "error": str(e)}
+        try:
+            stock = yf.Ticker(jp_symbol)
+            info = stock.info
+            if not info or 'shortName' not in info:
+                return {"success": False, "error": "該当する銘柄が見つかりません"}
+            result = extract_stock_info(info)
+            history = StockSearchHistory(user_id=user_id, symbol=jp_symbol)
+            db.add(history)
+            db.commit()
+            return {"success": True, "data": result}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    finally:
+        db.close()
