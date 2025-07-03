@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from app.views import auth_view
-from app.controllers import auth_controller
+from app.api.v1.endpoints import auth as auth_api
+from app.api.v1.endpoints import stock_search as stock_search_api
 
 app = FastAPI()
 
 # 静的ファイルとルーティング登録
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
-app.include_router(auth_view.router)
-app.include_router(auth_controller.router)
+app.include_router(auth_api.router, )
+app.include_router(stock_search_api.router,)

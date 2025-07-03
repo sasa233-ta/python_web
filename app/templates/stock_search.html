@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>株価検索</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+  {% include "header.html" %}
+  <div class="container mt-4">
+    <h2>株価検索</h2>
+    <form method="post" action="/stock_search" class="mb-3">
+      <div class="mb-3">
+        <label for="symbol" class="form-label">銘柄コード（例: 7203.T）</label>
+        <input type="text" class="form-control" id="symbol" name="symbol" required>
+      </div>
+      <button type="submit" class="btn btn-primary">検索</button>
+    </form>
+    {% if error %}
+      <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+    {% if result %}
+      <div class="card mt-4">
+        <div class="card-body">
+          <h3 class="card-title text-primary fw-bold" style="font-size:2rem;">
+            {{ result['銘柄名'] }}
+            <span class="badge bg-secondary" style="font-size:1.2rem;">{{ result['市場'] }}</span>
+          </h3>
+          <h4 class="text-danger mb-3">現在値: <span class="fw-bold" style="font-size:2rem;">{{ result['現在値'] if result['現在値'] else '-' }}</span></h4>
+          <h5 class="text-success mb-4">銘柄コード: <span class="fw-bold">{{ result['symbol'] if result['symbol'] else '-' }}</span></h5>
+          <table class="table table-bordered">
+            <tbody>
+              {% for key, value in result.items() %}
+                {% if key != '銘柄名' and key != '市場' and key != 'symbol' and key != '現在値' %}
+                <tr>
+                  <th>{{ key }}</th>
+                  <td>{{ value if value is not none else '-' }}</td>
+                </tr>
+                {% endif %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</body>
+</html>
