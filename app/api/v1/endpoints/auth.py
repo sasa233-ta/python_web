@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, Form, Depends
 from fastapi.responses import RedirectResponse
 from app.services.auth_service import register_user_service, login_user_service, logout_user_service, get_current_user_id
-from app.services.stock_search_service import get_holdings_with_pl_service
+from app.services.trade_service import get_holdings_with_pl_service
 from app.core.config import templates
 from app.database import SessionLocal
 from app.models.login_history_model import LoginHistory
