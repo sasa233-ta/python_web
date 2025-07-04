@@ -29,7 +29,12 @@
           </h3>
           <h4 class="text-danger mb-3">現在値: <span class="fw-bold" style="font-size:2rem;">{{ result['現在値'] if result['現在値'] else '-' }}</span></h4>
           <h5 class="text-success mb-4">銘柄コード: <span class="fw-bold">{{ result['symbol'] if result['symbol'] else '-' }}</span></h5>
-          <table class="table table-bordered">
+          <form method="post" action="/buy_stock">
+            <input type="hidden" name="symbol" value="{{ result['symbol'] }}">
+            <input type="hidden" name="price" value="{{ result['現在値'] }}">
+            <button type="submit" class="btn btn-success">100株購入</button>
+          </form>
+          <table class="table table-bordered mt-3">
             <tbody>
               {% for key, value in result.items() %}
                 {% if key != '銘柄名' and key != '市場' and key != 'symbol' and key != '現在値' %}
@@ -43,6 +48,17 @@
           </table>
         </div>
       </div>
+    {% endif %}
+    {% if js_alert %}
+    <script>
+      if ("{{ js_alert }}" === "購入しました！") {
+        alert("{{ js_alert }}");
+        window.location.href = '/stock_search';
+      } else {
+        alert("{{ js_alert }}");
+        window.location.reload();
+      }
+    </script>
     {% endif %}
   </div>
 </body>

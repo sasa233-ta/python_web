@@ -41,6 +41,30 @@ def normalize_jp_symbol(symbol: str) -> str:
         return symbol
     raise ValueError("日本株は4桁コードまたは4桁+.Tで入力してください")
 
+def search_stock_service(symbol: str):
+    try:
+        jp_symbol = normalize_jp_symbol(symbol)
+    except ValueError as e:
+        return {"success": False, "error": str(e)}
+    try:
+        stock = yf.Ticker(jp_symbol)
+        info = stock.info
+        if not info or 'shortName' not in info:
+            return {"success": False, "error": "該当する銘柄が見つかりません"}
+        result = extract_stock_info(info)
+        return {"success": True, "data": result}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+def record_search_history_service(user_id: str, symbol: str):
+    db = SessionLocal()
+    try:
+        history = StockSearchHistory(user_id=user_id, symbol=symbol)
+        db.add(history)
+        db.commit()
+    finally:
+        db.close()
+
 def stock_search_service(symbol: str, user_id: str):
     db = SessionLocal()
     try:

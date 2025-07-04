@@ -7,5 +7,34 @@
   {% include "header.html" %}
   <h2>ようこそ！</h2>
   <p>ダッシュボードへようこそ。</p>
+
+  {% if holdings and holdings|length > 0 %}
+    <h3>保有株一覧</h3>
+    <p>評価損益合計: <span class="fw-bold">{{ '%.0f'|format(total_pl) }} 円</span></p>
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>銘柄コード</th>
+          <th>保有株数</th>
+          <th>平均取得単価</th>
+          <th>現在値</th>
+          <th>損益</th>
+          <th>購入日</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for h in holdings %}
+        <tr>
+          <td>{{ h.symbol }}</td>
+          <td>{{ h.quantity }}</td>
+          <td>{{ '%.2f'|format(h.avg_price) if h.avg_price else '-' }}</td>
+          <td>{{ '%.2f'|format(h.current_price) if h.current_price else '-' }}</td>
+          <td>{% if h.pl is not none %}{{ '%.0f'|format(h.pl) }}{% else %}-{% endif %}</td>
+          <td>{{ h.purchased_at.strftime('%Y-%m-%d') if h.purchased_at else '-' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
 </body>
 </html>

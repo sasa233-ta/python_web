@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Request, Form, Depends
 from fastapi.responses import RedirectResponse
 from app.services.auth_service import register_user_service, login_user_service, logout_user_service, get_current_user_id
+from app.services.trade_service import get_holdings_with_pl_service
 from app.core.config import templates
 from app.database import SessionLocal
 from app.models.login_history_model import LoginHistory
@@ -18,7 +19,9 @@ def register_page(request: Request):
 
 @router.get("/dashboard")
 def dashboard_page(request: Request, user_id: str = Depends(get_current_user_id)):
-    return templates.TemplateResponse("dashboard.html", {"request": request})
+    holdings = get_holdings_with_pl_service(user_id)
+    total_pl = sum([h["pl"] for h in holdings if h["pl"] is not None]) if holdings else 0
+    return templates.TemplateResponse("dashboard.html", {"request": request, "holdings": holdings, "total_pl": total_pl})
 
 @router.get("/login_history")
 def login_history_page(request: Request, user_id: str = Depends(get_current_user_id)):
