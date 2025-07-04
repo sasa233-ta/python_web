@@ -10,6 +10,10 @@
   {% include "header.html" %}
   <div class="container mt-4">
     <h2>保有株一覧</h2>
+    <div class="mb-3">
+      <span class="me-4">評価額合計: <span class="fw-bold">{{ '%.0f'|format(total_eval) }} 円</span></span>
+      <span>実現損益: <span class="fw-bold">{{ '%.0f'|format(realized_pl) }} 円</span></span>
+    </div>
     <table class="table table-bordered">
       <thead>
         <tr>
@@ -18,6 +22,7 @@
           <th>保有株数</th>
           <th>平均取得単価</th>
           <th>現在値</th>
+          <th>評価額</th>
           <th>損益</th>
           <th>購入日</th>
           <th>操作</th>
@@ -31,6 +36,7 @@
           <td>{{ h.quantity }}</td>
           <td>{{ '%.2f'|format(h.avg_price) if h.avg_price else '-' }}</td>
           <td>{{ '%.2f'|format(h.current_price) if h.current_price else '-' }}</td>
+          <td>{% if h.current_price %}{{ '%.0f'|format(h.current_price * h.quantity) }}{% else %}-{% endif %}</td>
           <td>{% if h.pl is not none %}{{ '%.0f'|format(h.pl) }}{% else %}-{% endif %}</td>
           <td>{{ h.purchased_at.strftime('%Y-%m-%d') if h.purchased_at else '-' }}</td>
           <td>

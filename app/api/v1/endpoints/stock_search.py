@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, Form, Depends
-from app.services.stock_search_service import stock_search_service, buy_stock_service, sell_stock_service, get_holdings_service, get_holdings_with_pl_service
+from app.services.stock_search_service import stock_search_service, buy_stock_service, sell_stock_service, get_holdings_service, get_holdings_with_pl_service, get_realized_pl_service
 from app.services.auth_service import get_current_user_id
 from app.core.config import templates
 
@@ -35,4 +35,8 @@ def sell_stock(request: Request, symbol: str = Form(...), price: float = Form(..
 @router.get("/holdings")
 def holdings_page(request: Request, user_id: str = Depends(get_current_user_id)):
     holdings = get_holdings_with_pl_service(user_id)
-    return templates.TemplateResponse("holdings.html", {"request": request, "holdings": holdings})
+    # 評価額合計
+    total_eval = sum([(h["current_price"] or 0) * h["quantity"] for h in holdings]) if holdings else 0
+    # 実現損益（現状は0の仮実装）
+    realized_pl = get_realized_pl_service(user_id)
+    return templates.TemplateResponse("holdings.html", {"request": request, "holdings": holdings, "total_eval": total_eval, "realized_pl": realized_pl})

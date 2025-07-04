@@ -4,6 +4,7 @@ import yfinance as yf
 from app.database import SessionLocal
 from app.models.stock_search_history_model import StockSearchHistory
 from app.models.holding_model import Holding
+from app.models.trade_history_model import TradeHistory
 
 def extract_stock_info(info):
     summary = info.get("longBusinessSummary")
@@ -76,7 +77,6 @@ def buy_stock_service(user_id: str, symbol: str, price: float, quantity: int = 1
     try:
         holding = db.query(Holding).filter_by(user_id=user_id, symbol=symbol).first()
         if holding:
-            # 平均取得単価を加重平均で更新
             total_quantity = holding.quantity + quantity
             holding.avg_price = (
                 (holding.avg_price * holding.quantity + price * quantity) / total_quantity
@@ -86,6 +86,9 @@ def buy_stock_service(user_id: str, symbol: str, price: float, quantity: int = 1
         else:
             holding = Holding(user_id=user_id, symbol=symbol, quantity=quantity, avg_price=price)
             db.add(holding)
+        # 買い履歴を記録
+        trade = TradeHistory(user_id=user_id, symbol=symbol, trade_type='buy', quantity=quantity, price=price)
+        db.add(trade)
         db.commit()
         return {"success": True, "message": f"{symbol} を{quantity}株購入しました"}
     finally:
@@ -97,10 +100,15 @@ def sell_stock_service(user_id: str, symbol: str, price: float, quantity: int = 
         holding = db.query(Holding).filter_by(user_id=user_id, symbol=symbol).first()
         if not holding or holding.quantity < quantity:
             return {"success": False, "error": "保有株数が足りません"}
+        # 実現損益計算（平均取得単価との差額×売却株数）
+        realized_pl = (price - holding.avg_price) * quantity if holding.avg_price else 0
         holding.quantity -= quantity
         holding.updated_at = datetime.utcnow()
         if holding.quantity == 0:
             db.delete(holding)
+        # 売り履歴を記録
+        trade = TradeHistory(user_id=user_id, symbol=symbol, trade_type='sell', quantity=quantity, price=price, realized_pl=realized_pl)
+        db.add(trade)
         db.commit()
         return {"success": True, "message": f"{symbol} を{quantity}株売却しました"}
     finally:
@@ -148,5 +156,14 @@ def get_holdings_with_pl_service(user_id: str):
                 "pl": pl
             })
         return result
+    finally:
+        db.close()
+
+def get_realized_pl_service(user_id: str):
+    db = SessionLocal()
+    try:
+        trades = db.query(TradeHistory).filter_by(user_id=user_id, trade_type='sell').all()
+        total = sum([t.realized_pl or 0 for t in trades])
+        return total
     finally:
         db.close()
