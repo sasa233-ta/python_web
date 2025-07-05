@@ -9,3 +9,8 @@ aiosqlite
 passlib[bcrypt]
 yfinance
 xlrd
+scikit-learn
+pandas
+torch
+rapidfuzz
+jpholiday

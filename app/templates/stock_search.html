@@ -51,11 +51,52 @@
                   </h3>
                   <h4 class="text-danger mb-3">現在値: <span class="fw-bold" style="font-size:2rem;">{{ result['現在値'] if result['現在値'] else '-' }}</span></h4>
                   <h5 class="text-success mb-4">銘柄コード: <span class="fw-bold">{{ result['symbol'] if result['symbol'] else '-' }}</span></h5>
-                  <form method="post" action="/buy_stock">
+                  <form method="post" action="/buy_stock" class="mb-3">
                     <input type="hidden" name="symbol" value="{{ result['symbol'] }}">
                     <input type="hidden" name="price" value="{{ result['現在値'] }}">
                     <button type="submit" class="btn btn-success">100株購入</button>
                   </form>
+                  <form id="analyze-form" method="post" action="/analyze_stock" class="mb-3">
+                    <input type="hidden" name="symbol" value="{{ result['symbol'] }}">
+                    <button type="submit" class="btn btn-warning">分析する</button>
+                  </form>
+                  <div id="analyzing-message" style="display:none;" class="alert alert-warning">分析中です・・・</div>
+                  <div id="analysis-result">
+                    {% if analysis %}
+                    <div class="alert alert-info">
+                      <strong>AI分析:</strong><br>
+                      {% if analysis.prob_lstm is not none %}
+                        LSTMモデル: 上がる確率 <span class="fw-bold">{{ (analysis.prob_lstm * 100) | round(1) }}%</span>
+                      {% else %}
+                        LSTMモデル: データ不足のため分析不可
+                      {% endif %}
+                    </div>
+                    {% endif %}
+                  </div>
+                  <script>
+                  const analyzeForm = document.getElementById('analyze-form');
+                  if (analyzeForm) {
+                    analyzeForm.addEventListener('submit', async function(e) {
+                      e.preventDefault();
+                      document.getElementById('analyzing-message').style.display = '';
+                      document.getElementById('analysis-result').innerHTML = '';
+                      const formData = new FormData(analyzeForm);
+                      const res = await fetch('/analyze_stock', {
+                        method: 'POST',
+                        body: formData
+                      });
+                      const html = await res.text();
+                      // AI分析エリアだけ差し替え
+                      const parser = new DOMParser();
+                      const doc = parser.parseFromString(html, 'text/html');
+                      const newAnalysis = doc.getElementById('analysis-result');
+                      if (newAnalysis) {
+                        document.getElementById('analysis-result').innerHTML = newAnalysis.innerHTML;
+                      }
+                      document.getElementById('analyzing-message').style.display = 'none';
+                    });
+                  }
+                  </script>
                   <table class="table table-bordered mt-3">
                     <tbody>
                       {% for key, value in result.items() %}
