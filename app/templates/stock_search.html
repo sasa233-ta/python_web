@@ -5,16 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>株価検索</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <style>
-      .search-highlight { background: #fff3cd; font-weight: bold; }
-    </style>
+    <link rel="stylesheet" href="/static/css/style.css">
     {% if js_alert %}
       <script>alert("{{ js_alert }}");</script>
     {% endif %}
 </head>
 <body>
   {% include "header.html" %}
-  <div class="container mt-4">
+  <div class="container mt-5">
     <div class="row justify-content-center">
       <div class="col-md-8 col-lg-6">
         <div class="card shadow-sm">

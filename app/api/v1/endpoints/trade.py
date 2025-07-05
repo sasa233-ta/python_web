@@ -19,14 +19,14 @@ def buy_stock(request: Request, symbol: str = Form(...), price: float = Form(...
 def sell_stock(request: Request, symbol: str = Form(...), price: float = Form(...), user_id: str = Depends(get_current_user_id)):
     result = sell_stock_service(user_id, symbol, price, 100)
     holdings = get_holdings_with_pl_service(user_id)
-    total_eval = sum([(h["current_price"] or 0) * h["quantity"] for h in holdings]) if holdings else 0
+    total_pl = sum([h["pl"] or 0 for h in holdings]) if holdings else 0
     realized_pl = get_realized_pl_service(user_id)
     return templates.TemplateResponse(
         "holdings.html",
         {
             "request": request,
             "holdings": holdings,
-            "total_eval": total_eval,
+            "total_pl": total_pl,
             "realized_pl": realized_pl,
             "message": result.get("message"),
             "error": result.get("error")
@@ -36,6 +36,6 @@ def sell_stock(request: Request, symbol: str = Form(...), price: float = Form(..
 @router.get("/holdings")
 def holdings_page(request: Request, user_id: str = Depends(get_current_user_id)):
     holdings = get_holdings_with_pl_service(user_id)
-    total_eval = sum([(h["current_price"] or 0) * h["quantity"] for h in holdings]) if holdings else 0
+    total_pl = sum([h["pl"] or 0 for h in holdings]) if holdings else 0
     realized_pl = get_realized_pl_service(user_id)
-    return templates.TemplateResponse("holdings.html", {"request": request, "holdings": holdings, "total_eval": total_eval, "realized_pl": realized_pl})
+    return templates.TemplateResponse("holdings.html", {"request": request, "holdings": holdings, "total_pl": total_pl, "realized_pl": realized_pl})

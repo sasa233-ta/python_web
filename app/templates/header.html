@@ -8,9 +8,9 @@
 </head>
 <body>
 <header>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
     <div class="container-fluid">
-      <a class="navbar-brand" href="/dashboard">MyApp</a>
+      <a class="navbar-brand fw-bold" href="/dashboard">MyApp</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -35,7 +35,7 @@
           {% endif %}
         </ul>
         {% if request.cookies.username %}
-          <span class="navbar-text ms-3">ようこそ{{ request.cookies.user_id }}：{{ request.cookies.username }}さん</span>
+          <span class="navbar-text ms-3 text-light">ようこそ <span class="fw-bold">{{ request.cookies.username }}</span> さん</span>
         {% endif %}
       </div>
     </div>
