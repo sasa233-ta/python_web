@@ -5,61 +5,78 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>株価検索</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+      .search-highlight { background: #fff3cd; font-weight: bold; }
+    </style>
+    {% if js_alert %}
+      <script>alert("{{ js_alert }}");</script>
+    {% endif %}
 </head>
 <body>
   {% include "header.html" %}
   <div class="container mt-4">
-    <h2>株価検索</h2>
-    <form method="post" action="/stock_search" class="mb-3">
-      <div class="mb-3">
-        <label for="symbol" class="form-label">銘柄コード（例: 7203.T）</label>
-        <input type="text" class="form-control" id="symbol" name="symbol" required>
-      </div>
-      <button type="submit" class="btn btn-primary">検索</button>
-    </form>
-    {% if error %}
-      <div class="alert alert-danger">{{ error }}</div>
-    {% endif %}
-    {% if result %}
-      <div class="card mt-4">
-        <div class="card-body">
-          <h3 class="card-title text-primary fw-bold" style="font-size:2rem;">
-            {{ result['銘柄名'] }}
-            <span class="badge bg-secondary" style="font-size:1.2rem;">{{ result['市場'] }}</span>
-          </h3>
-          <h4 class="text-danger mb-3">現在値: <span class="fw-bold" style="font-size:2rem;">{{ result['現在値'] if result['現在値'] else '-' }}</span></h4>
-          <h5 class="text-success mb-4">銘柄コード: <span class="fw-bold">{{ result['symbol'] if result['symbol'] else '-' }}</span></h5>
-          <form method="post" action="/buy_stock">
-            <input type="hidden" name="symbol" value="{{ result['symbol'] }}">
-            <input type="hidden" name="price" value="{{ result['現在値'] }}">
-            <button type="submit" class="btn btn-success">100株購入</button>
-          </form>
-          <table class="table table-bordered mt-3">
-            <tbody>
-              {% for key, value in result.items() %}
-                {% if key != '銘柄名' and key != '市場' and key != 'symbol' and key != '現在値' %}
-                <tr>
-                  <th>{{ key }}</th>
-                  <td>{{ value if value is not none else '-' }}</td>
-                </tr>
-                {% endif %}
-              {% endfor %}
-            </tbody>
-          </table>
+    <div class="row justify-content-center">
+      <div class="col-md-8 col-lg-6">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h2 class="mb-4 text-center">株価検索</h2>
+            <form method="post" action="/stock_search" class="mb-3">
+              <div class="input-group">
+                <input type="text" class="form-control" id="keyword" name="keyword" placeholder="銘柄コードまたは会社名" required autofocus value="{{ keyword or '' }}">
+                <button type="submit" class="btn btn-primary">検索</button>
+              </div>
+            </form>
+            {% if error %}
+              <div class="alert alert-danger mt-2">{{ error }}</div>
+            {% endif %}
+            {% if candidates %}
+              <div class="mt-4">
+                <h5 class="mb-3">検索候補一覧</h5>
+                <ul class="list-group">
+                  {% for c in candidates %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      <span>
+                        <a href="/stock_detail/{{ c.code }}" class="text-decoration-none">{{ c.name | e }} <span class="text-secondary">({{ c.code }})</span></a>
+                      </span>
+                    </li>
+                  {% endfor %}
+                </ul>
+                <div class="form-text mt-2">候補が多い場合はキーワードを絞り込んでください。あいまい検索にも対応しています。</div>
+              </div>
+            {% endif %}
+            {% if result %}
+              <div class="card mt-4">
+                <div class="card-body">
+                  <h3 class="card-title text-primary fw-bold" style="font-size:2rem;">
+                    {{ result['銘柄名'] }}
+                    <span class="badge bg-secondary" style="font-size:1.2rem;">{{ result['市場'] }}</span>
+                  </h3>
+                  <h4 class="text-danger mb-3">現在値: <span class="fw-bold" style="font-size:2rem;">{{ result['現在値'] if result['現在値'] else '-' }}</span></h4>
+                  <h5 class="text-success mb-4">銘柄コード: <span class="fw-bold">{{ result['symbol'] if result['symbol'] else '-' }}</span></h5>
+                  <form method="post" action="/buy_stock">
+                    <input type="hidden" name="symbol" value="{{ result['symbol'] }}">
+                    <input type="hidden" name="price" value="{{ result['現在値'] }}">
+                    <button type="submit" class="btn btn-success">100株購入</button>
+                  </form>
+                  <table class="table table-bordered mt-3">
+                    <tbody>
+                      {% for key, value in result.items() %}
+                        {% if key != '銘柄名' and key != '市場' and key != 'symbol' and key != '現在値' %}
+                        <tr>
+                          <th>{{ key }}</th>
+                          <td>{{ value if value is not none else '-' }}</td>
+                        </tr>
+                        {% endif %}
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            {% endif %}
+          </div>
         </div>
       </div>
-    {% endif %}
-    {% if js_alert %}
-    <script>
-      if ("{{ js_alert }}" === "購入しました！") {
-        alert("{{ js_alert }}");
-        window.location.href = '/stock_search';
-      } else {
-        alert("{{ js_alert }}");
-        window.location.reload();
-      }
-    </script>
-    {% endif %}
+    </div>
   </div>
 </body>
 </html>

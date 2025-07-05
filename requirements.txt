@@ -8,3 +8,4 @@ databases
 aiosqlite 
 passlib[bcrypt]
 yfinance
+xlrd
