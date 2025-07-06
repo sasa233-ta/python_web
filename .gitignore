@@ -58,6 +58,5 @@ dist/
 
 # その他
 .idea/
-
 # yfinanceキャッシュ
 /data/*.pkl

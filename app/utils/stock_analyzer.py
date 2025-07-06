@@ -4,9 +4,12 @@ import torch
 import torch.nn as nn
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
+import os
+import pickle
+import datetime
 
 # 1. 株価データの取得
-def fetch_stock_data(ticker='AAPL', period='1y'):
+def fetch_stock_data(ticker='AAPL', period='3y'):
     df = yf.download(ticker, period=period)
     df = df[['Close']]
     df['Return+3'] = df['Close'].shift(-3) > df['Close']
@@ -19,17 +22,30 @@ def create_features(df):
     df['MA5'] = df['Close'].rolling(5).mean()
     df['MA10'] = df['Close'].rolling(10).mean()
     df['Diff'] = df['MA5'] - df['MA10']
+    df['Return1'] = df['Close'].pct_change()
+    df['Volatility'] = df['Close'].rolling(10).std()
+    # RSI
+    delta = df['Close'].diff()
+    up = delta.clip(lower=0)
+    down = -delta.clip(upper=0)
+    roll_up = up.rolling(14).mean()
+    roll_down = down.rolling(14).mean()
+    rs = roll_up / (roll_down + 1e-9)
+    df['RSI'] = 100 - (100 / (1 + rs))
     df = df.dropna()
-    return df[['Close', 'MA5', 'MA10', 'Diff']], df['Label']
+    return df[['Close', 'MA5', 'MA10', 'Diff', 'Return1', 'Volatility', 'RSI']], df['Label']
 
 # 3. PyTorch モデル定義
 class Net(nn.Module):
     def __init__(self, input_dim):
         super(Net, self).__init__()
         self.fc = nn.Sequential(
-            nn.Linear(input_dim, 8),
+            nn.Linear(input_dim, 32),
             nn.ReLU(),
-            nn.Linear(8, 1),
+            nn.Dropout(0.2),
+            nn.Linear(32, 16),
+            nn.ReLU(),
+            nn.Linear(16, 1),
             nn.Sigmoid()
         )
 
@@ -37,13 +53,18 @@ class Net(nn.Module):
         return self.fc(x)
 
 # 4. 学習・予測関数
-def train_model(X_train, y_train, input_dim, epochs=50):
+def train_model(X_train, y_train, input_dim, epochs=100):
     model = Net(input_dim)
     criterion = nn.BCELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.5)
 
     X_train = torch.FloatTensor(X_train)
     y_train = torch.FloatTensor(y_train.values).unsqueeze(1)
+
+    best_loss = float('inf')
+    patience = 10
+    patience_counter = 0
 
     for epoch in range(epochs):
         outputs = model(X_train)
@@ -51,7 +72,17 @@ def train_model(X_train, y_train, input_dim, epochs=50):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-    
+        scheduler.step()
+
+        if loss.item() < best_loss:
+            best_loss = loss.item()
+            patience_counter = 0
+        else:
+            patience_counter += 1
+            if patience_counter > patience:
+                print(f"Early stopping at epoch {epoch}")
+                break
+
     return model
 
 # 5. 実行部分
