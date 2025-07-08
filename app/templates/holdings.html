@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>保有株一覧</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  {% include "header.html" %}
+  <div class="container mt-5">
+    <div class="row justify-content-center">
+      <div class="col-md-11 col-lg-9">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h2 class="mb-4 text-center">保有株一覧</h2>
+            <div class="mb-3 text-center">
+              <span class="me-4">損益合計: <span class="fw-bold {% if total_pl >= 0 %}text-success{% else %}text-danger{% endif %}">{{ '%.0f'|format(total_pl) }} 円</span></span>
+              <span>実現損益: <span class="fw-bold {% if realized_pl >= 0 %}text-success{% else %}text-danger{% endif %}">{{ '%.0f'|format(realized_pl) }} 円</span></span>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-bordered align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>銘柄名</th>
+                    <th>保有株数</th>
+                    <th>平均取得単価</th>
+                    <th>現在値</th>
+                    <th>評価額</th>
+                    <th>損益</th>
+                    <th>購入日</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for h in holdings %}
+                  <tr>
+                    <td>{{ h.name if h.name else '-' }}</td>
+                    <td>{{ h.quantity }}</td>
+                    <td>{{ '%.2f'|format(h.avg_price) if h.avg_price else '-' }}</td>
+                    <td>{{ '%.2f'|format(h.current_price) if h.current_price else '-' }}</td>
+                    <td>{% if h.current_price %}{{ '%.0f'|format(h.current_price * h.quantity) }}{% else %}-{% endif %}</td>
+                    <td>{% if h.pl is not none %}<span class="fw-bold {% if h.pl >= 0 %}text-success{% else %}text-danger{% endif %}">{{ '%.0f'|format(h.pl) }}</span>{% else %}-{% endif %}</td>
+                    <td>{{ h.purchased_at.strftime('%Y-%m-%d') if h.purchased_at else '-' }}</td>
+                    <td>
+                      <form method="post" action="/sell_stock" style="display:inline;">
+                        <input type="hidden" name="symbol" value="{{ h.symbol }}">
+                        <input type="hidden" name="price" value="{{ h.current_price }}">
+                        <button type="submit" class="btn btn-danger btn-sm" {% if h.quantity < 100 %}disabled{% endif %}>100株売却</button>
+                      </form>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% if not holdings or holdings|length == 0 %}
+              <div class="alert alert-info text-center mt-4">保有株はありません。</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
