@@ -5,61 +5,173 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>株価検索</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    {% if js_alert %}
+      <script>alert("{{ js_alert }}");</script>
+    {% endif %}
 </head>
 <body>
   {% include "header.html" %}
-  <div class="container mt-4">
-    <h2>株価検索</h2>
-    <form method="post" action="/stock_search" class="mb-3">
-      <div class="mb-3">
-        <label for="symbol" class="form-label">銘柄コード（例: 7203.T）</label>
-        <input type="text" class="form-control" id="symbol" name="symbol" required>
-      </div>
-      <button type="submit" class="btn btn-primary">検索</button>
-    </form>
-    {% if error %}
-      <div class="alert alert-danger">{{ error }}</div>
-    {% endif %}
-    {% if result %}
-      <div class="card mt-4">
-        <div class="card-body">
-          <h3 class="card-title text-primary fw-bold" style="font-size:2rem;">
-            {{ result['銘柄名'] }}
-            <span class="badge bg-secondary" style="font-size:1.2rem;">{{ result['市場'] }}</span>
-          </h3>
-          <h4 class="text-danger mb-3">現在値: <span class="fw-bold" style="font-size:2rem;">{{ result['現在値'] if result['現在値'] else '-' }}</span></h4>
-          <h5 class="text-success mb-4">銘柄コード: <span class="fw-bold">{{ result['symbol'] if result['symbol'] else '-' }}</span></h5>
-          <form method="post" action="/buy_stock">
-            <input type="hidden" name="symbol" value="{{ result['symbol'] }}">
-            <input type="hidden" name="price" value="{{ result['現在値'] }}">
-            <button type="submit" class="btn btn-success">100株購入</button>
-          </form>
-          <table class="table table-bordered mt-3">
-            <tbody>
-              {% for key, value in result.items() %}
-                {% if key != '銘柄名' and key != '市場' and key != 'symbol' and key != '現在値' %}
-                <tr>
-                  <th>{{ key }}</th>
-                  <td>{{ value if value is not none else '-' }}</td>
-                </tr>
-                {% endif %}
-              {% endfor %}
-            </tbody>
-          </table>
+  <div class="container mt-5">
+    <div class="row justify-content-center">
+      <div class="col-md-8 col-lg-6">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h2 class="mb-4 text-center">株価検索</h2>
+            <form method="post" action="/stock_search" class="mb-3">
+              <div class="input-group">
+                <input type="text" class="form-control" id="keyword" name="keyword" placeholder="銘柄コードまたは会社名" required autofocus value="{{ keyword or '' }}">
+                <button type="submit" class="btn btn-primary">検索</button>
+              </div>
+            </form>
+            {% if error %}
+              <div class="alert alert-danger mt-2">{{ error }}</div>
+            {% endif %}
+            {% if candidates %}
+              <div class="mt-4">
+                <h5 class="mb-3">検索候補一覧</h5>
+                <ul class="list-group">
+                  {% for c in candidates %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      <span>
+                        <a href="/stock_detail/{{ c.code }}" class="text-decoration-none">{{ c.name | e }} <span class="text-secondary">({{ c.code }})</span></a>
+                      </span>
+                    </li>
+                  {% endfor %}
+                </ul>
+                <div class="form-text mt-2">候補が多い場合はキーワードを絞り込んでください。あいまい検索にも対応しています。</div>
+              </div>
+            {% endif %}
+            {% if result %}
+              <div class="card mt-4">
+                <div class="card-body">
+                  <h3 class="card-title text-primary fw-bold" style="font-size:2rem;">
+                    {{ result['銘柄名'] }}
+                    <span class="badge bg-secondary" style="font-size:1.2rem;">{{ result['市場'] }}</span>
+                  </h3>
+                  <h4 class="text-danger mb-3">現在値: <span class="fw-bold" style="font-size:2rem;">{{ result['現在値'] if result['現在値'] else '-' }}</span></h4>
+                  <h5 class="text-success mb-4">銘柄コード: <span class="fw-bold">{{ result['symbol'] if result['symbol'] else '-' }}</span></h5>
+                  <form method="post" action="/buy_stock" class="mb-3">
+                    <input type="hidden" name="symbol" value="{{ result['symbol'] }}">
+                    <input type="hidden" name="price" value="{{ result['現在値'] }}">
+                    <button type="submit" class="btn btn-success">100株購入</button>
+                  </form>
+                  <form id="analyze-form" method="post" action="/analyze_stock" class="mb-3">
+                    <input type="hidden" name="symbol" value="{{ result['symbol'] }}">
+                    <button type="submit" class="btn btn-warning">分析する</button>
+                  </form>
+                  <div id="analyzing-message" style="display:none;" class="alert alert-warning">分析中です・・・</div>
+                  <div id="analysis-result">
+                    {% if analysis %}
+                    <div class="alert alert-info">
+                      <strong>AI分析:</strong><br>
+                      {% if analysis.prob_lstm is not none %}
+                        LSTMモデル: 上がる確率 <span class="fw-bold">{{ (analysis.prob_lstm * 100) | round(1) }}%</span>
+                      {% else %}
+                        LSTMモデル: データ不足のため分析不可
+                      {% endif %}
+                    </div>
+                    {% endif %}
+                  </div>
+                  <script>
+                  const analyzeForm = document.getElementById('analyze-form');
+                  if (analyzeForm) {
+                    analyzeForm.addEventListener('submit', async function(e) {
+                      e.preventDefault();
+                      document.getElementById('analyzing-message').style.display = '';
+                      document.getElementById('analysis-result').innerHTML = '';
+                      // API分離: /api/analyze_stock を呼ぶ
+                      const formData = new FormData(analyzeForm);
+                      const symbol = formData.get('symbol');
+                      // AI分析API
+                      const res = await fetch('/api/analyze_stock', {
+                        method: 'POST',
+                        body: formData
+                      });
+                      const data = await res.json();
+                      let html = '';
+                      if (data.success) {
+                        if (data.prob_lstm !== null && data.prob_lstm !== undefined) {
+                          html = `<div class="alert alert-info"><strong>AI分析:</strong><br>LSTMモデル: 上がる確率 <span class="fw-bold">${(data.prob_lstm * 100).toFixed(1)}%</span></div>`;
+                        } else {
+                          html = `<div class="alert alert-info"><strong>AI分析:</strong><br>LSTMモデル: データ不足のため分析不可</div>`;
+                        }
+                      } else {
+                        html = `<div class="alert alert-danger">AI分析エラー: ${data.error || '不明なエラー'}</div>`;
+                      }
+                      document.getElementById('analysis-result').innerHTML = html;
+                      document.getElementById('analyzing-message').style.display = 'none';
+
+                      // チャートAPI
+                      const chartRes = await fetch(`/api/chart_data?symbol=${encodeURIComponent(symbol)}`);
+                      const chartJson = await chartRes.json();
+                      if (chartJson.success && chartJson.labels && chartJson.data) {
+                        // チャート描画
+                        let chartArea = document.getElementById('stockChart');
+                        if (!chartArea) {
+                          // canvasがなければ作る
+                          const chartDiv = document.createElement('div');
+                          chartDiv.className = 'mt-4';
+                          chartDiv.innerHTML = `<h5>株価チャート（日足・終値）</h5><canvas id="stockChart" height="80"></canvas>`;
+                          analyzeForm.parentNode.appendChild(chartDiv);
+                          chartArea = document.getElementById('stockChart');
+                        }
+                        // 既存チャートがあれば破棄
+                        if (window.stockChartInstance) {
+                          window.stockChartInstance.destroy();
+                        }
+                        const ctx = chartArea.getContext('2d');
+                        window.stockChartInstance = new Chart(ctx, {
+                          type: 'line',
+                          data: {
+                            labels: chartJson.labels,
+                            datasets: [{
+                              label: '終値',
+                              data: chartJson.data,
+                              borderColor: 'rgba(54, 162, 235, 1)',
+                              backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                              fill: true,
+                              tension: 0.2,
+                              pointRadius: 0
+                            }]
+                          },
+                          options: {
+                            responsive: true,
+                            plugins: {
+                              legend: { display: false },
+                              title: { display: false }
+                            },
+                            scales: {
+                              x: { display: true, title: { display: false } },
+                              y: { display: true, title: { display: true, text: '終値' } }
+                            }
+                          }
+                        });
+                      }
+                    });
+                  }
+                  </script>
+                  <table class="table table-bordered mt-3">
+                    <tbody>
+                      {% for key, value in result.items() %}
+                        {% if key != '銘柄名' and key != '市場' and key != 'symbol' and key != '現在値' %}
+                        <tr>
+                          <th>{{ key }}</th>
+                          <td>{{ value if value is not none else '-' }}</td>
+                        </tr>
+                        {% endif %}
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                  <!-- ↓↓↓ ここからJinja2によるチャート描画部分は不要になったので削除 ↓↓↓ -->
+                  <!-- チャート描画はAPI経由のJSで自動生成されます -->
+                </div>
+              </div>
+            {% endif %}
+          </div>
         </div>
       </div>
-    {% endif %}
-    {% if js_alert %}
-    <script>
-      if ("{{ js_alert }}" === "購入しました！") {
-        alert("{{ js_alert }}");
-        window.location.href = '/stock_search';
-      } else {
-        alert("{{ js_alert }}");
-        window.location.reload();
-      }
-    </script>
-    {% endif %}
+    </div>
   </div>
 </body>
 </html>
