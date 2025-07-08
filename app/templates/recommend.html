@@ -11,7 +11,9 @@
   {% include "header.html" %}
   <div class="container mt-5">
     <h2>今日おすすめの株（セクター別ランダム最大50件・確率順）</h2>
-    {% if not stocks_by_sector or stocks_by_sector|length == 0 %}
+    {% if not cache_exists %}
+      <div class="alert alert-warning">本日分はまだ更新されていません（キャッシュ生成待ち）。</div>
+    {% elif not stocks_by_sector or stocks_by_sector|length == 0 %}
       <div class="alert alert-warning">おすすめ株が見つかりませんでした。</div>
     {% else %}
     <ul class="nav nav-tabs" id="sectorTab" role="tablist">

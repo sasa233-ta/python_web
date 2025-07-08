@@ -2,6 +2,7 @@ import os
 import pickle
 import datetime
 import random
+import re
 from app.models.stock_master_model import StockMaster
 from app.database import SessionLocal
 from app.utils.stock_analyzer import predict_probability
@@ -9,9 +10,26 @@ from app.utils.stock_analyzer import predict_probability
 CACHE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), '..', 'data')
 
 
+def normalize_jp_symbol(symbol: str) -> str:
+    symbol = symbol.strip().upper()
+    if symbol.endswith('.T'):
+        return symbol
+    if re.fullmatch(r'\d{4}', symbol):
+        return symbol + '.T'
+    raise ValueError('日本株は4桁コードまたは4桁+.Tで入力してください')
+
+
 def get_today_recommend_stocks(n=50):
     today = datetime.date.today().strftime('%Y%m%d')
+    yesterday = (datetime.date.today() - datetime.timedelta(days=1)).strftime('%Y%m%d')
     cache_path = os.path.join(CACHE_DIR, f'recommend_{today}_probs.pkl')
+    # 昨日分のキャッシュファイルがあれば削除
+    yesterday_cache_path = os.path.join(CACHE_DIR, f'recommend_{yesterday}_probs.pkl')
+    if os.path.exists(yesterday_cache_path):
+        try:
+            os.remove(yesterday_cache_path)
+        except Exception:
+            pass
     if os.path.exists(cache_path):
         with open(cache_path, 'rb') as f:
             result = pickle.load(f)
@@ -42,7 +60,7 @@ def get_today_recommend_stocks(n=50):
                 # yfinanceで始値・終値取得
                 try:
                     import yfinance as yf
-                    info = yf.Ticker(s.code + ".T").history(period="1d")
+                    info = yf.Ticker(normalize_jp_symbol(s.code)).history(period="1d")
                     open_price = float(info['Open'].iloc[-1]) if not info.empty else None
                     close_price = float(info['Close'].iloc[-1]) if not info.empty else None
                 except Exception:

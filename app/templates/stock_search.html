@@ -80,20 +80,74 @@
                       e.preventDefault();
                       document.getElementById('analyzing-message').style.display = '';
                       document.getElementById('analysis-result').innerHTML = '';
+                      // API分離: /api/analyze_stock を呼ぶ
                       const formData = new FormData(analyzeForm);
-                      const res = await fetch('/analyze_stock', {
+                      const symbol = formData.get('symbol');
+                      // AI分析API
+                      const res = await fetch('/api/analyze_stock', {
                         method: 'POST',
                         body: formData
                       });
-                      const html = await res.text();
-                      // AI分析エリアだけ差し替え
-                      const parser = new DOMParser();
-                      const doc = parser.parseFromString(html, 'text/html');
-                      const newAnalysis = doc.getElementById('analysis-result');
-                      if (newAnalysis) {
-                        document.getElementById('analysis-result').innerHTML = newAnalysis.innerHTML;
+                      const data = await res.json();
+                      let html = '';
+                      if (data.success) {
+                        if (data.prob_lstm !== null && data.prob_lstm !== undefined) {
+                          html = `<div class="alert alert-info"><strong>AI分析:</strong><br>LSTMモデル: 上がる確率 <span class="fw-bold">${(data.prob_lstm * 100).toFixed(1)}%</span></div>`;
+                        } else {
+                          html = `<div class="alert alert-info"><strong>AI分析:</strong><br>LSTMモデル: データ不足のため分析不可</div>`;
+                        }
+                      } else {
+                        html = `<div class="alert alert-danger">AI分析エラー: ${data.error || '不明なエラー'}</div>`;
                       }
+                      document.getElementById('analysis-result').innerHTML = html;
                       document.getElementById('analyzing-message').style.display = 'none';
+
+                      // チャートAPI
+                      const chartRes = await fetch(`/api/chart_data?symbol=${encodeURIComponent(symbol)}`);
+                      const chartJson = await chartRes.json();
+                      if (chartJson.success && chartJson.labels && chartJson.data) {
+                        // チャート描画
+                        let chartArea = document.getElementById('stockChart');
+                        if (!chartArea) {
+                          // canvasがなければ作る
+                          const chartDiv = document.createElement('div');
+                          chartDiv.className = 'mt-4';
+                          chartDiv.innerHTML = `<h5>株価チャート（日足・終値）</h5><canvas id="stockChart" height="80"></canvas>`;
+                          analyzeForm.parentNode.appendChild(chartDiv);
+                          chartArea = document.getElementById('stockChart');
+                        }
+                        // 既存チャートがあれば破棄
+                        if (window.stockChartInstance) {
+                          window.stockChartInstance.destroy();
+                        }
+                        const ctx = chartArea.getContext('2d');
+                        window.stockChartInstance = new Chart(ctx, {
+                          type: 'line',
+                          data: {
+                            labels: chartJson.labels,
+                            datasets: [{
+                              label: '終値',
+                              data: chartJson.data,
+                              borderColor: 'rgba(54, 162, 235, 1)',
+                              backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                              fill: true,
+                              tension: 0.2,
+                              pointRadius: 0
+                            }]
+                          },
+                          options: {
+                            responsive: true,
+                            plugins: {
+                              legend: { display: false },
+                              title: { display: false }
+                            },
+                            scales: {
+                              x: { display: true, title: { display: false } },
+                              y: { display: true, title: { display: true, text: '終値' } }
+                            }
+                          }
+                        });
+                      }
                     });
                   }
                   </script>
@@ -109,46 +163,8 @@
                       {% endfor %}
                     </tbody>
                   </table>
-                  {% if chart_labels and chart_data %}
-                  <div class="mt-4">
-                    <h5>株価チャート（日足・終値）</h5>
-                    <canvas id="stockChart" height="80"></canvas>
-                  </div>
-                  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-                  <script>
-                    const chartLabels = {{ chart_labels|safe }};
-                    const chartData = {{ chart_data|safe }};
-                    if (chartLabels && chartData && chartLabels.length && chartData.length) {
-                      const ctx = document.getElementById('stockChart').getContext('2d');
-                      new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                          labels: chartLabels,
-                          datasets: [{
-                            label: '終値',
-                            data: chartData,
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            backgroundColor: 'rgba(54, 162, 235, 0.1)',
-                            fill: true,
-                            tension: 0.2,
-                            pointRadius: 0
-                          }]
-                        },
-                        options: {
-                          responsive: true,
-                          plugins: {
-                            legend: { display: false },
-                            title: { display: false }
-                          },
-                          scales: {
-                            x: { display: true, title: { display: false } },
-                            y: { display: true, title: { display: true, text: '終値' } }
-                          }
-                        }
-                      });
-                    }
-                  </script>
-                  {% endif %}
+                  <!-- ↓↓↓ ここからJinja2によるチャート描画部分は不要になったので削除 ↓↓↓ -->
+                  <!-- チャート描画はAPI経由のJSで自動生成されます -->
                 </div>
               </div>
             {% endif %}
