@@ -3,11 +3,12 @@ logging.basicConfig(level=logging.INFO)
 
 from fastapi import APIRouter, Request, Form, Depends
 from app.services.jp_stock_search_service import search_stocks_by_keyword_db
-from app.services.stock_search_service import search_stock_service, record_search_history_service
+from app.services.stock_search_service import search_stock_service, record_search_history_service, get_chart_data
 from app.services.auth_service import get_current_user_id
 from app.core.config import templates
 from app.utils import stock_analyzer
 import asyncio
+import json
 
 router = APIRouter()
 
@@ -51,16 +52,18 @@ async def analyze_stock(request: Request, symbol: str = Form(None), keyword: str
     if not code and keyword:
         candidates = search_stocks_by_keyword_db(keyword)
         if not candidates:
-            return templates.TemplateResponse("stock_search.html", {"request": request, "result": None, "error": "該当する銘柄がありません", "candidates": None, "analysis": None})
+            return templates.TemplateResponse("stock_search.html", {"request": request, "result": None, "error": "該当する銘柄がありません", "candidates": None, "analysis": None, "chart_labels": None, "chart_data": None})
         if len(candidates) == 1:
             code = candidates[0]["code"]
         else:
-            return templates.TemplateResponse("stock_search.html", {"request": request, "result": None, "error": None, "candidates": candidates, "analysis": None})
+            return templates.TemplateResponse("stock_search.html", {"request": request, "result": None, "error": None, "candidates": candidates, "analysis": None, "chart_labels": None, "chart_data": None})
     if not code:
-        return templates.TemplateResponse("stock_search.html", {"request": request, "result": None, "error": "銘柄コードまたは検索語を入力してください", "candidates": None, "analysis": None})
+        return templates.TemplateResponse("stock_search.html", {"request": request, "result": None, "error": "銘柄コードまたは検索語を入力してください", "candidates": None, "analysis": None, "chart_labels": None, "chart_data": None})
     
     result = search_stock_service(code)
     analysis = None
+    chart_labels = None
+    chart_data = None
     
     if result["success"]:
         try:
@@ -73,11 +76,18 @@ async def analyze_stock(request: Request, symbol: str = Form(None), keyword: str
             analysis = type('Analysis', (), {"prob_lstm": prob})()
             status = "成功" if prob is not None else "データ不足"
             logging.info(f"[分析API] 分析完了({status}): {code}")
+            # チャートデータ取得
+            chart = get_chart_data(code)
+            if chart and chart.get("labels") and chart.get("data"):
+                chart_labels = json.dumps(chart["labels"], ensure_ascii=False)
+                chart_data = json.dumps(chart["data"], ensure_ascii=False)
         except Exception as e:
             logging.error(f"[分析API] エラー発生: {e}")
             analysis = type('Analysis', (), {"prob_lstm": None})()
+            chart_labels = None
+            chart_data = None
 
     return templates.TemplateResponse(
         "stock_search.html",
-        {"request": request, "result": result["data"] if result["success"] else None, "error": None, "candidates": None, "analysis": analysis}
+        {"request": request, "result": result["data"] if result["success"] else None, "error": None, "candidates": None, "analysis": analysis, "chart_labels": chart_labels, "chart_data": chart_data}
     )

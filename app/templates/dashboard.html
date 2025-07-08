@@ -14,6 +14,7 @@
       <div class="col-md-10 col-lg-8">
         <div class="card shadow-sm">
           <div class="card-body">
+            {% block content %}
             <h2 class="mb-4 text-center">ようこそ！</h2>
             <p class="lead text-center mb-4">ダッシュボードへようこそ。</p>
             {% if holdings and holdings|length > 0 %}
@@ -48,6 +49,7 @@
             {% else %}
               <div class="alert alert-info text-center mt-4">保有株はありません。</div>
             {% endif %}
+            {% endblock %}
           </div>
         </div>
       </div>

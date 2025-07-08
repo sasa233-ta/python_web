@@ -93,3 +93,20 @@ def stock_search_service(symbol: str, user_id: str):
             return {"success": False, "error": str(e)}
     finally:
         db.close()
+
+def get_chart_data(symbol: str, period: str = "1mo", interval: str = "1d"):
+    """
+    yfinanceで指定銘柄の時系列データ（日足）を取得し、
+    chart_labels（日付リスト）とchart_data（終値リスト）を返す
+    """
+    try:
+        jp_symbol = normalize_jp_symbol(symbol)
+        stock = yf.Ticker(jp_symbol)
+        hist = stock.history(period=period, interval=interval)
+        if hist.empty:
+            return [], []
+        chart_labels = [d.strftime("%Y-%m-%d") for d in hist.index]
+        chart_data = hist["Close"].tolist()
+        return chart_labels, chart_data
+    except Exception:
+        return [], []

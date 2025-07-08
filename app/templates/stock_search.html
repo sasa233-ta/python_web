@@ -109,6 +109,46 @@
                       {% endfor %}
                     </tbody>
                   </table>
+                  {% if chart_labels and chart_data %}
+                  <div class="mt-4">
+                    <h5>株価チャート（日足・終値）</h5>
+                    <canvas id="stockChart" height="80"></canvas>
+                  </div>
+                  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                  <script>
+                    const chartLabels = {{ chart_labels|safe }};
+                    const chartData = {{ chart_data|safe }};
+                    if (chartLabels && chartData && chartLabels.length && chartData.length) {
+                      const ctx = document.getElementById('stockChart').getContext('2d');
+                      new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                          labels: chartLabels,
+                          datasets: [{
+                            label: '終値',
+                            data: chartData,
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                            fill: true,
+                            tension: 0.2,
+                            pointRadius: 0
+                          }]
+                        },
+                        options: {
+                          responsive: true,
+                          plugins: {
+                            legend: { display: false },
+                            title: { display: false }
+                          },
+                          scales: {
+                            x: { display: true, title: { display: false } },
+                            y: { display: true, title: { display: true, text: '終値' } }
+                          }
+                        }
+                      });
+                    }
+                  </script>
+                  {% endif %}
                 </div>
               </div>
             {% endif %}
