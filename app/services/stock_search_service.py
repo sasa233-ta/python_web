@@ -3,6 +3,8 @@ import re
 import yfinance as yf
 from app.database import SessionLocal
 from app.models.stock_search_history_model import StockSearchHistory
+import logging
+import traceback
 
 def extract_stock_info(info):
     summary = info.get("longBusinessSummary")
@@ -45,15 +47,18 @@ def search_stock_service(symbol: str):
     try:
         jp_symbol = normalize_jp_symbol(symbol)
     except ValueError as e:
+        logging.error(f"[search_stock_service] normalize_jp_symbolエラー: {e}")
         return {"success": False, "error": str(e)}
     try:
         stock = yf.Ticker(jp_symbol)
         info = stock.info
         if not info or 'shortName' not in info:
+            logging.error(f"[search_stock_service] 該当する銘柄が見つかりません: {jp_symbol}")
             return {"success": False, "error": "該当する銘柄が見つかりません"}
         result = extract_stock_info(info)
         return {"success": True, "data": result}
     except Exception as e:
+        logging.error(f"[search_stock_service] 例外発生: {e}\n{traceback.format_exc()}")
         return {"success": False, "error": str(e)}
 
 def record_search_history_service(user_id: str, symbol: str):
