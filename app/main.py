@@ -13,6 +13,7 @@ from app.models.stock_search_history_model import StockSearchHistory
 from app.models.holding_model import Holding
 from app.models.trade_history_model import TradeHistory
 from app.models.stock_master_model import StockMaster
+from app.endpoints import admin as admin_api
 
 # サーバー起動時に一度だけ会社一覧を取得
 fetch_and_import_jpx_listed_companies()
@@ -29,5 +30,6 @@ app.include_router(web_stock_search_api.router)
 app.include_router(web_recommend_api.router)
 app.include_router(web_trade_api.router)
 app.include_router(api_analyze_api.router)
+app.include_router(admin_api.router)
 # app.include_router(auth_api.router)  # ←API用authは今後JSON専用にする場合のみ残す
 # app.include_router(stock_search_api.router)  # ←API用のみ残す場合はコメントアウト
