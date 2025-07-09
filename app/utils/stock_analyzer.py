@@ -8,11 +8,13 @@ import os
 import pickle
 import datetime
 import random
+import time
 from app.models.stock_master_model import StockMaster  # モデル名は適宜調整
 from app.database import SessionLocal
 
 # 1. 株価データの取得
 def fetch_stock_data(ticker='AAPL', period='3y'):
+    time.sleep(1)
     df = yf.download(ticker, period=period)
     df = df[['Close']]
     df['Return+3'] = df['Close'].shift(-3) > df['Close']
@@ -35,6 +37,7 @@ def get_related_stock_returns(target_symbol, session, period='3y', n=5):
     sample = random.sample(stocks, min(n, len(stocks)))
     returns = []
     for s in sample:
+        time.sleep(2)
         df = fetch_stock_data(s.symbol, period=period)
         if 'Close' in df:
             ret = df['Close'].pct_change().rename(f'{s.symbol}_ret')
@@ -136,6 +139,6 @@ def predict_probability(ticker='AAPL'):
     model = train_model(X_train, y_train, X.shape[1])
 
     # 最新データで予測
-    latest = torch.FloatTensor([X_scaled[-1]])
+    latest = torch.from_numpy(X_scaled[-1].astype('float32')).unsqueeze(0)
     prob = model(latest).item()
     return prob
