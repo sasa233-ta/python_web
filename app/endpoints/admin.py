@@ -1,36 +1,48 @@
 from fastapi import APIRouter, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.templating import Jinja2Templates
 from app.database import Base, engine
 from sqlalchemy import text
 import os
+import logging
 
 router = APIRouter()
+templates = Jinja2Templates(directory="app/templates")
 
-@router.get("/admin/list_tables")
-def list_tables():
+@router.get("/admin/dashboard", response_class=HTMLResponse)
+def admin_dashboard(request: Request):
+    return templates.TemplateResponse("admin_dashboard.html", {"request": request})
+
+@router.get("/admin/list_tables", response_class=HTMLResponse)
+def list_tables(request: Request):
     try:
         with engine.connect() as conn:
             result = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table';"))
             tables = [row[0] for row in result]
-        return {"tables": tables}
+        return templates.TemplateResponse("admin_dashboard.html", {"request": request, "tables": tables})
     except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        return templates.TemplateResponse("admin_dashboard.html", {"request": request, "error": str(e)})
 
-@router.get("/admin/table/{table_name}")
-def get_table_data(table_name: str):
+@router.get("/admin/table/{table_name}", response_class=HTMLResponse)
+def get_table_data(request: Request, table_name: str):
     try:
         with engine.connect() as conn:
             result = conn.execute(text(f"SELECT * FROM {table_name} LIMIT 100"))
             columns = result.keys()
             rows = [dict(zip(columns, row)) for row in result]
-        return {"columns": columns, "rows": rows}
+        return templates.TemplateResponse("admin_dashboard.html", {"request": request, "columns": columns, "rows": rows})
     except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        return templates.TemplateResponse("admin_dashboard.html", {"request": request, "error": str(e)})
 
-@router.get("/admin/list_data_dir")
-def list_data_dir():
+@router.get("/admin/list_data_dir", response_class=HTMLResponse)
+def list_data_dir(request: Request):
     try:
-        files = os.listdir("/data")
-        return {"files": files}
+        data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../data'))
+        if not os.path.exists(data_dir):
+            logging.warning(f"{data_dir} ディレクトリが存在しません")
+            return templates.TemplateResponse("admin_dashboard.html", {"request": request, "error": f"{data_dir} ディレクトリが存在しません"})
+        files = os.listdir(data_dir)
+        logging.info(f"{data_dir} 内のファイル一覧: %s", files)
+        return templates.TemplateResponse("admin_dashboard.html", {"request": request, "files": files})
     except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        return templates.TemplateResponse("admin_dashboard.html", {"request": request, "error": str(e)})
