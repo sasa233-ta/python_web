@@ -10,4 +10,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # ポート番号は環境変数PORTを展開して起動（文字列形式で記述）
-CMD sh -c "uvicorn app.main:app --host 0.0.0.0 --port 8000"
+CMD sh -c "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"
