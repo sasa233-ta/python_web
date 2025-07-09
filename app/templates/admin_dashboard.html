@@ -65,5 +65,13 @@
         {% if success %}<div style="color:green;">{{ success }}</div>{% endif %}
         {% if error %}<div style="color:red;">{{ error }}</div>{% endif %}
     </div>
+    <div class="admin-section">
+        <h2>おすすめ株キャッシュ再生成</h2>
+        <form method="post" action="/admin/update_recommend_cache">
+            <button type="submit">おすすめ株キャッシュ（pickle）再生成</button>
+        </form>
+        {% if success %}<div style="color:green;">{{ success }}</div>{% endif %}
+        {% if error %}<div style="color:red;">{{ error }}</div>{% endif %}
+    </div>
 </body>
 </html>

@@ -58,3 +58,15 @@ def update_jpx(request: Request):
     except Exception as e:
         logging.error("JPX更新エラー: %s", e)
         return templates.TemplateResponse("admin_dashboard.html", {"request": request, "error": str(e)})
+
+@router.post("/admin/update_recommend_cache", response_class=HTMLResponse)
+def update_recommend_cache(request: Request):
+    try:
+        from app.services.recommend_service import generate_recommend_cache
+        generate_recommend_cache()
+        msg = "おすすめ株キャッシュ（pickleファイル）を再生成しました"
+        logging.info(msg)
+        return templates.TemplateResponse("admin_dashboard.html", {"request": request, "success": msg})
+    except Exception as e:
+        logging.error("おすすめ株キャッシュ生成エラー: %s", e)
+        return templates.TemplateResponse("admin_dashboard.html", {"request": request, "error": str(e)})
