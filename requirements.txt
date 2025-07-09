@@ -13,4 +13,5 @@ pandas==2.2.2
 torch==2.0.1
 rapidfuzz==3.6.2
 jpholiday==0.1.8
-# xlrd（Excel読込が不要なら外す）
+xlrd
+openpyxl
