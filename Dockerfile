@@ -9,5 +9,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # アプリ本体をコピー
 COPY . .
 
-# ポート8000でFastAPIを起動
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# ポート番号は環境変数PORTを展開して起動
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port $PORT"]
