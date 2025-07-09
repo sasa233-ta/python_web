@@ -82,7 +82,7 @@ def get_today_recommend_stocks(n=10, _called_from_cache=False):
         session.close()
 
 
-def generate_recommend_cache(n=50):
+def generate_recommend_cache(n=10):
     """
     管理画面等から呼び出し用：本日分のおすすめ株キャッシュ（pickleファイル）を再生成
     """
