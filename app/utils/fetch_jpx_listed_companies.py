@@ -9,7 +9,7 @@ from app.database import Base
 
 def fetch_and_import_jpx_listed_companies():
     JPX_XLS_URL = "https://www.jpx.co.jp/markets/statistics-equities/misc/tvdivq0000001vg2-att/data_j.xls"
-    DATA_DIR = os.path.join(os.path.dirname(__file__), '../../data')
+    DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../data'))
     XLS_PATH = os.path.join(DATA_DIR, 'jpx_listed_companies.xls')
     TIMESTAMP_PATH = XLS_PATH + '.timestamp'
     today = datetime.now().strftime('%Y-%m-%d')

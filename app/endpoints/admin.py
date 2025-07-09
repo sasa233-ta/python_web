@@ -46,3 +46,15 @@ def list_data_dir(request: Request):
         return templates.TemplateResponse("admin_dashboard.html", {"request": request, "files": files})
     except Exception as e:
         return templates.TemplateResponse("admin_dashboard.html", {"request": request, "error": str(e)})
+
+@router.post("/admin/update_jpx", response_class=HTMLResponse)
+def update_jpx(request: Request):
+    try:
+        from app.utils.fetch_jpx_listed_companies import fetch_and_import_jpx_listed_companies
+        fetch_and_import_jpx_listed_companies()
+        msg = "JPX上場銘柄データベースを更新しました"
+        logging.info(msg)
+        return templates.TemplateResponse("admin_dashboard.html", {"request": request, "success": msg})
+    except Exception as e:
+        logging.error("JPX更新エラー: %s", e)
+        return templates.TemplateResponse("admin_dashboard.html", {"request": request, "error": str(e)})
