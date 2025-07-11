@@ -19,7 +19,7 @@ def normalize_jp_symbol(symbol: str) -> str:
     raise ValueError('日本株は4桁コードまたは4桁+.Tで入力してください')
 
 
-def get_today_recommend_stocks(n=2, _called_from_cache=False):
+def get_today_recommend_stocks(n=10, _called_from_cache=False):
     today = datetime.date.today().strftime('%Y%m%d')
     yesterday = (datetime.date.today() - datetime.timedelta(days=1)).strftime('%Y%m%d')
     cache_path = os.path.join(CACHE_DIR, f'recommend_{today}_probs.pkl')
