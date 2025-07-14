@@ -38,20 +38,18 @@
               <th>コード</th>
               <th>銘柄名</th>
               <th>市場</th>
-              <th>終値</th>
               <th>上昇確率</th>
             </tr>
           </thead>
           <tbody>
           {% if stocks_by_sector['all']|length == 0 %}
-            <tr><td colspan="5" class="text-center text-muted">データなし</td></tr>
+            <tr><td colspan="4" class="text-center text-muted">データなし</td></tr>
           {% else %}
             {% for stock in stocks_by_sector['all'] %}
               <tr>
                 <td>{{ stock.code }}</td>
                 <td><a href="/stock_detail/{{ stock.code }}" target="_blank">{{ stock.name }}</a></td>
                 <td>{{ stock.market }}</td>
-                <td>{% if stock.close is not none %}{{ '%.2f'|format(stock.close) }}{% else %}-{% endif %}</td>
                 <td>{% if stock.probability is not none %}{{ '%.1f'|format(stock.probability * 100) }}%{% else %}-{% endif %}</td>
               </tr>
             {% endfor %}
@@ -70,12 +68,11 @@
                 <th>17業種</th>
                 <th>業種名</th>
                 <th>上昇確率</th>
-                <th>終値</th>
               </tr>
             </thead>
             <tbody>
             {% if stocks|length == 0 %}
-              <tr><td colspan="7" class="text-center text-muted">データなし</td></tr>
+              <tr><td colspan="6" class="text-center text-muted">データなし</td></tr>
             {% else %}
               {% for stock in stocks %}
                 <tr>
@@ -85,7 +82,6 @@
                   <td>{{ stock.sector17 }}</td>
                   <td>{{ stock.sector17_name }}</td>
                   <td>{% if stock.probability is not none %}{{ '%.1f'|format(stock.probability * 100) }}%{% else %}-{% endif %}</td>
-                  <td>{% if stock.close is not none %}{{ '%.2f'|format(stock.close) }}{% else %}-{% endif %}</td>
                 </tr>
               {% endfor %}
             {% endif %}

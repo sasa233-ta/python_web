@@ -19,7 +19,7 @@ def normalize_jp_symbol(symbol: str) -> str:
     raise ValueError('日本株は4桁コードまたは4桁+.Tで入力してください')
 
 
-def get_today_recommend_stocks(n=50):
+def get_today_recommend_stocks(n=20, _called_from_cache=False):
     today = datetime.date.today().strftime('%Y%m%d')
     yesterday = (datetime.date.today() - datetime.timedelta(days=1)).strftime('%Y%m%d')
     cache_path = os.path.join(CACHE_DIR, f'recommend_{today}_probs.pkl')
@@ -41,6 +41,10 @@ def get_today_recommend_stocks(n=50):
                 all_stocks.sort(key=lambda x: (x['probability'] is not None, x['probability']), reverse=True)
                 result['all'] = all_stocks
             return result
+    elif not _called_from_cache:
+        generate_recommend_cache(n)
+        # 再帰呼び出しでキャッシュを読む（無限ループ防止のためフラグを渡す）
+        return get_today_recommend_stocks(n, _called_from_cache=True)
     session = SessionLocal()
     try:
         sector17_list = session.query(StockMaster.sector17_code).distinct().filter(StockMaster.sector17_code != '-').all()
@@ -57,15 +61,6 @@ def get_today_recommend_stocks(n=50):
                     prob = predict_probability(s.code)
                 except Exception:
                     prob = None
-                # yfinanceで始値・終値取得
-                try:
-                    import yfinance as yf
-                    info = yf.Ticker(normalize_jp_symbol(s.code)).history(period="1d")
-                    open_price = float(info['Open'].iloc[-1]) if not info.empty else None
-                    close_price = float(info['Close'].iloc[-1]) if not info.empty else None
-                except Exception:
-                    open_price = None
-                    close_price = None
                 stock_dicts.append({
                     'code': s.code,
                     'name': s.name,
@@ -73,9 +68,7 @@ def get_today_recommend_stocks(n=50):
                     'sector17': s.sector17_code,
                     'sector17_name': s.sector17,
                     'market': s.market,
-                    'probability': prob,
-                    'open': open_price,
-                    'close': close_price
+                    'probability': prob
                 })
             stock_dicts.sort(key=lambda x: (x['probability'] is not None, x['probability']), reverse=True)
             result[sector17_code] = stock_dicts
@@ -87,3 +80,10 @@ def get_today_recommend_stocks(n=50):
         return result
     finally:
         session.close()
+
+
+def generate_recommend_cache(n=20):
+    """
+    管理画面等から呼び出し用：本日分のおすすめ株キャッシュ（pickleファイル）を再生成
+    """
+    get_today_recommend_stocks(n=n, _called_from_cache=True)

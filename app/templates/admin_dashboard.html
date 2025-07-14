@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>管理者ダッシュボード</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .admin-section { margin-bottom: 2em; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ccc; padding: 4px 8px; }
+        th { background: #f0f0f0; }
+        .file-list { margin-top: 1em; }
+    </style>
+</head>
+<body>
+    <h1>管理者ダッシュボード</h1>
+    <div class="admin-section">
+        <h2>テーブル一覧</h2>
+        <form method="get" action="/admin/list_tables">
+            <button type="submit">テーブル一覧取得</button>
+        </form>
+        {% if tables %}
+        <ul>
+            {% for table in tables %}
+            <li>
+                <a href="/admin/table/{{ table }}">{{ table }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+    <div class="admin-section">
+        <h2>/data ディレクトリ内ファイル</h2>
+        <form method="get" action="/admin/list_data_dir">
+            <button type="submit">/data内ファイル一覧取得</button>
+        </form>
+        {% if files %}
+        <ul class="file-list">
+            {% for file in files %}
+            <li>{{ file }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+    {% if columns and rows %}
+    <div class="admin-section">
+        <h2>テーブル内容</h2>
+        <table>
+            <tr>
+                {% for col in columns %}<th>{{ col }}</th>{% endfor %}
+            </tr>
+            {% for row in rows %}
+            <tr>
+                {% for col in columns %}<td>{{ row[col] }}</td>{% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    {% endif %}
+    <div class="admin-section">
+        <h2>JPX上場銘柄DB更新</h2>
+        <form method="post" action="/admin/update_jpx">
+            <button type="submit">JPXデータベースを最新化</button>
+        </form>
+        {% if success %}<div style="color:green;">{{ success }}</div>{% endif %}
+        {% if error %}<div style="color:red;">{{ error }}</div>{% endif %}
+    </div>
+    <div class="admin-section">
+        <h2>おすすめ株キャッシュ再生成</h2>
+        <form method="post" action="/admin/update_recommend_cache">
+            <button type="submit">おすすめ株キャッシュ（pickle）再生成</button>
+        </form>
+        {% if success %}<div style="color:green;">{{ success }}</div>{% endif %}
+        {% if error %}<div style="color:red;">{{ error }}</div>{% endif %}
+    </div>
+</body>
+</html>

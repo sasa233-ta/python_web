@@ -9,22 +9,22 @@ from app.database import Base
 
 def fetch_and_import_jpx_listed_companies():
     JPX_XLS_URL = "https://www.jpx.co.jp/markets/statistics-equities/misc/tvdivq0000001vg2-att/data_j.xls"
-    DATA_DIR = os.path.join(os.path.dirname(__file__), '../../data')
+    DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../data'))
     XLS_PATH = os.path.join(DATA_DIR, 'jpx_listed_companies.xls')
     TIMESTAMP_PATH = XLS_PATH + '.timestamp'
     today = datetime.now().strftime('%Y-%m-%d')
     os.makedirs(DATA_DIR, exist_ok=True)
-    # 1日1回のみダウンロード・DB更新
+    # 1日1回のみダウンロード
     if os.path.exists(XLS_PATH) and os.path.exists(TIMESTAMP_PATH) and open(TIMESTAMP_PATH, encoding='utf-8').read().strip() == today:
-        print("本日分のXLS・DBは既に最新です")
-        return
-    # ダウンロード
-    r = requests.get(JPX_XLS_URL)
-    r.raise_for_status()
-    with open(XLS_PATH, 'wb') as f:
-        f.write(r.content)
-    with open(TIMESTAMP_PATH, 'w', encoding='utf-8') as f:
-        f.write(today)
+        print("本日分のXLSは既に最新です（DBは再投入します）")
+    else:
+        # ダウンロード
+        r = requests.get(JPX_XLS_URL)
+        r.raise_for_status()
+        with open(XLS_PATH, 'wb') as f:
+            f.write(r.content)
+        with open(TIMESTAMP_PATH, 'w', encoding='utf-8') as f:
+            f.write(today)
     # DB初期化・テーブル作成
     Base.metadata.create_all(bind=engine)
     # XLS→DB投入
