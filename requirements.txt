@@ -16,3 +16,5 @@ jpholiday==0.1.8
 xlrd
 openpyxl
 lightgbm
+pywin32
+matplotlib

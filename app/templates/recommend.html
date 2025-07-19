@@ -38,19 +38,25 @@
               <th>コード</th>
               <th>銘柄名</th>
               <th>市場</th>
-              <th>上昇確率</th>
+              <th>PyTorch確率</th>
+              <th>LightGBM確率</th>
+              <th>LSTM確率</th>
+              <th>アンサンブル確率</th>
             </tr>
           </thead>
           <tbody>
           {% if stocks_by_sector['all']|length == 0 %}
-            <tr><td colspan="4" class="text-center text-muted">データなし</td></tr>
+            <tr><td colspan="7" class="text-center text-muted">データなし</td></tr>
           {% else %}
             {% for stock in stocks_by_sector['all'] %}
               <tr>
                 <td>{{ stock.code }}</td>
                 <td><a href="/stock_detail/{{ stock.code }}" target="_blank">{{ stock.name }}</a></td>
                 <td>{{ stock.market }}</td>
-                <td>{% if stock.probability is not none %}{{ '%.1f'|format(stock.probability * 100) }}%{% else %}-{% endif %}</td>
+                <td>{% if stock.prob_pytorch is not none %}{{ '%.1f'|format(stock.prob_pytorch * 100) }}%{% else %}-{% endif %}</td>
+                <td>{% if stock.prob_lightgbm is not none %}{{ '%.1f'|format(stock.prob_lightgbm * 100) }}%{% else %}-{% endif %}</td>
+                <td>{% if stock.prob_lstm is not none %}{{ '%.1f'|format(stock.prob_lstm * 100) }}%{% else %}-{% endif %}</td>
+                <td>{% if stock.prob_ensemble is not none %}{{ '%.1f'|format(stock.prob_ensemble * 100) }}%{% else %}-{% endif %}</td>
               </tr>
             {% endfor %}
           {% endif %}
@@ -67,12 +73,15 @@
                 <th>市場</th>
                 <th>17業種</th>
                 <th>業種名</th>
-                <th>上昇確率</th>
+                <th>PyTorch確率</th>
+                <th>LightGBM確率</th>
+                <th>LSTM確率</th>
+                <th>アンサンブル確率</th>
               </tr>
             </thead>
             <tbody>
             {% if stocks|length == 0 %}
-              <tr><td colspan="6" class="text-center text-muted">データなし</td></tr>
+              <tr><td colspan="9" class="text-center text-muted">データなし</td></tr>
             {% else %}
               {% for stock in stocks %}
                 <tr>
@@ -81,7 +90,10 @@
                   <td>{{ stock.market }}</td>
                   <td>{{ stock.sector17 }}</td>
                   <td>{{ stock.sector17_name }}</td>
-                  <td>{% if stock.probability is not none %}{{ '%.1f'|format(stock.probability * 100) }}%{% else %}-{% endif %}</td>
+                  <td>{% if stock.prob_pytorch is not none %}{{ '%.1f'|format(stock.prob_pytorch * 100) }}%{% else %}-{% endif %}</td>
+                  <td>{% if stock.prob_lightgbm is not none %}{{ '%.1f'|format(stock.prob_lightgbm * 100) }}%{% else %}-{% endif %}</td>
+                  <td>{% if stock.prob_lstm is not none %}{{ '%.1f'|format(stock.prob_lstm * 100) }}%{% else %}-{% endif %}</td>
+                  <td>{% if stock.prob_ensemble is not none %}{{ '%.1f'|format(stock.prob_ensemble * 100) }}%{% else %}-{% endif %}</td>
                 </tr>
               {% endfor %}
             {% endif %}

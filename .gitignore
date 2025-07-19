@@ -60,3 +60,7 @@ dist/
 .idea/
 # yfinanceキャッシュ
 /data/*.pkl
+
+# Excel files
+/data/rss_stock_data.xlsx
+data/~$rss_stock_data.xlsx

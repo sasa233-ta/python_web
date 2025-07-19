@@ -5,7 +5,7 @@ import random
 import re
 from app.models.stock_master_model import StockMaster
 from app.database import SessionLocal
-from app.utils.stock_analyzer import predict_probability
+from app.utils.rss_excel_loader import get_model_accuracy_excel
 
 CACHE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), '..', 'data')
 
@@ -51,16 +51,19 @@ def get_today_recommend_stocks(n=20, _called_from_cache=False):
         result = {}
         all_stocks = []
         for (sector17_code,) in sector17_list:
-            stocks = session.query(StockMaster).filter(StockMaster.sector17_code == sector17_code).all()
+            stocks = session.query(StockMaster).filter(
+                StockMaster.sector17_code == sector17_code,
+                StockMaster.market == 'プライム（内国株式）'
+            ).all()
             if not stocks:
                 continue
             sample = random.sample(stocks, min(n, len(stocks)))
             stock_dicts = []
             for s in sample:
                 try:
-                    prob = predict_probability(s.code)
+                    acc_pt, acc_lgb, acc_lstm, acc_ensemble3 = get_model_accuracy_excel(str(s.code))
                 except Exception:
-                    prob = None
+                    acc_pt = acc_lgb = acc_lstm = acc_ensemble3 = None
                 stock_dicts.append({
                     'code': s.code,
                     'name': s.name,
@@ -68,12 +71,16 @@ def get_today_recommend_stocks(n=20, _called_from_cache=False):
                     'sector17': s.sector17_code,
                     'sector17_name': s.sector17,
                     'market': s.market,
-                    'probability': prob
+                    'prob_pytorch': acc_pt,
+                    'prob_lightgbm': acc_lgb,
+                    'prob_lstm': acc_lstm,
+                    'prob_ensemble': acc_ensemble3
                 })
-            stock_dicts.sort(key=lambda x: (x['probability'] is not None, x['probability']), reverse=True)
+            # 並び替えはアンサンブル確率優先
+            stock_dicts.sort(key=lambda x: (x['prob_ensemble'] is not None, x['prob_ensemble']), reverse=True)
             result[sector17_code] = stock_dicts
             all_stocks.extend(stock_dicts)
-        all_stocks.sort(key=lambda x: (x['probability'] is not None, x['probability']), reverse=True)
+        all_stocks.sort(key=lambda x: (x['prob_ensemble'] is not None, x['prob_ensemble']), reverse=True)
         result['all'] = all_stocks
         with open(cache_path, 'wb') as f:
             pickle.dump(result, f)
