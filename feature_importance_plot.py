@@ -5,7 +5,7 @@ from app.utils.rss_excel_loader import get_model_accuracy_excel
 
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 
-def plot_feature_importance(importances, model_name, topn=20):
+def plot_feature_importance(importances, model_name, topn=50):
     if not isinstance(importances, dict):
         print(f"{model_name} 重要度: {importances}")
         return

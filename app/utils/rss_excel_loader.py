@@ -107,6 +107,62 @@ def load_past_chart_data(
     if len(df) == 0:
         logger.error("欠損除去後にデータが0件です。Excelデータの空欄や不正値を確認してください。")
         raise ValueError("No data left after dropna. Check Excel for empty or invalid rows.")
+    # --- 配当落日・決算発表日からの距離特徴量追加 ---
+    try:
+        events_df = pd.read_excel(file_path, sheet_name='corporate_events')
+        events_df.columns = [c.strip().replace('\u3000', '') for c in events_df.columns]
+        # 1行目を使う（全銘柄共通想定）
+        def parse_event_date(val):
+            # '2025/3/30' or '2025-03-30' or '3/30' or '03/30' or datetime
+            if pd.isnull(val):
+                return None
+            if isinstance(val, pd.Timestamp):
+                return val.to_pydatetime()
+            s = str(val)
+            for fmt in ("%Y/%m/%d", "%Y-%m-%d", "%m/%d", "%m-%d"):
+                try:
+                    dt = pd.to_datetime(s, format=fmt)
+                    # 年がない場合はデータの年を使う
+                    if fmt in ("%m/%d", "%m-%d"):
+                        # 年はデータの年で後で補完
+                        return dt
+                    return dt
+                except Exception:
+                    continue
+            return None
+        if '配当落日' in events_df.columns and '決算発表日' in events_df.columns:
+            ex_val = events_df['配当落日'].iloc[0]
+            er_val = events_df['決算発表日'].iloc[0]
+            # データの日付リスト
+            date_series = pd.to_datetime(df['Date'])
+            # 配当落日
+            ex_date = parse_event_date(ex_val)
+            if ex_date is not None:
+                # 年がない場合は各行の年で補完
+                if ex_date.year == 1970:
+                    dist_ex = [abs((d.replace(month=ex_date.month, day=ex_date.day) - d).days) for d in date_series]
+                else:
+                    dist_ex = [abs((ex_date - d).days) for d in date_series]
+                df['dist_to_exdate'] = dist_ex
+            else:
+                df['dist_to_exdate'] = np.nan
+            # 決算発表日
+            er_date = parse_event_date(er_val)
+            if er_date is not None:
+                if er_date.year == 1970:
+                    dist_er = [abs((d.replace(month=er_date.month, day=er_date.day) - d).days) for d in date_series]
+                else:
+                    dist_er = [abs((er_date - d).days) for d in date_series]
+                df['dist_to_erdt'] = dist_er
+            else:
+                df['dist_to_erdt'] = np.nan
+        else:
+            df['dist_to_exdate'] = np.nan
+            df['dist_to_erdt'] = np.nan
+    except Exception as e:
+        logger.warning(f"corporate_eventsシートからの距離特徴量追加エラー: {e}")
+        df['dist_to_exdate'] = np.nan
+        df['dist_to_erdt'] = np.nan
     return df
 
 # --- ここから分析用関数群 ---
@@ -252,7 +308,8 @@ def create_features_from_excel(df):
         'Return1', 'Volatility', 'RSI', 'Volume',
         'ATR', 'ADX', 'Stoch_K', 'Stoch_D', 'WilliamsR',
         'weekday', 'month',
-        'temperature_2m_max', 'temperature_2m_min', 'precipitation_sum', 'weathercode'
+        'temperature_2m_max', 'temperature_2m_min', 'precipitation_sum', 'weathercode',
+        'dist_to_exdate', 'dist_to_erdt'
     ]
     if 'related_ret' in df:
         features.append('related_ret')
