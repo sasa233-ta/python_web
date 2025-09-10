@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}株詳細・分析{% endblock %}
+{% block content %}
+<h2>株詳細・分析</h2>
+<p>証券コード: {{ analysis.code }}</p>
+<table class="table table-bordered">
+  <tr><th>日付</th>{% for d in analysis.dates %}<td>{{ d }}</td>{% endfor %}</tr>
+  <tr><th>株価</th>{% for p in analysis.prices %}<td>{{ p }}</td>{% endfor %}</tr>
+</table>
+<div class="card mt-4">
+  <div class="card-header">分析結果</div>
+  <div class="card-body">
+    <p>平均株価: {{ analysis.mean }}</p>
+    <p>標準偏差: {{ analysis.std }}</p>
+    <p>3日後予測値: {{ analysis.prediction }}</p>
+    {% if analysis.prob_up_3days is not none %}
+      <p><strong>3日後上昇確率: {{ (analysis.prob_up_3days * 100) | round(2) }}%</strong></p>
+    {% else %}
+      <p><strong>3日後上昇確率: 算出不可</strong></p>
+    {% endif %}
+  </div>
+</div>
+<a href="{{ url_for('stock.stock_list') }}" class="btn btn-secondary">一覧へ戻る</a>
+{% endblock %}

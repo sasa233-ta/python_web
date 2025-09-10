@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}株式一覧{% endblock %}
+{% block content %}
+<h2>株式一覧・検索</h2>
+<form method="get" class="mb-3">
+  <input type="text" name="q" value="{{ keyword }}" placeholder="銘柄名またはコード" class="form-control" style="max-width:300px;display:inline-block;">
+  <button type="submit" class="btn btn-primary">検索</button>
+</form>
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>銘柄名</th>
+      <th>市場</th>
+      <th>33業種</th>
+      <th>17業種</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for stock in stocks %}
+    <tr>
+      <td>
+        <a href="{{ url_for('stock.stock_detail', code=stock.code) }}">{{ stock.name }}</a>
+      </td>
+      <td>{{ stock.market }}</td>
+      <td>{{ stock.sector33 }}</td>
+      <td>{{ stock.sector17 }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<div class="mt-3">
+  <nav aria-label="ページネーション">
+    <ul class="pagination justify-content-center">
+      {% if page > 1 %}
+      <li class="page-item">
+        <a class="page-link" href="?q={{ keyword }}&page={{ page-1 }}">前へ</a>
+      </li>
+      {% endif %}
+      {# ページ番号は最大5件まで表示 #}
+      {% set start_page = page-2 if page-2 > 0 else 1 %}
+      {% set end_page = start_page+4 if start_page+4 <= max_page else max_page %}
+      {% if end_page-start_page < 4 %}
+        {% set start_page = end_page-4 if end_page-4 > 0 else 1 %}
+      {% endif %}
+      {% for p in range(start_page, end_page+1) %}
+      <li class="page-item {% if p == page %}active{% endif %}">
+        <a class="page-link" href="?q={{ keyword }}&page={{ p }}">{{ p }}</a>
+      </li>
+      {% endfor %}
+      {% if page < max_page %}
+      <li class="page-item">
+        <a class="page-link" href="?q={{ keyword }}&page={{ page+1 }}">次へ</a>
+      </li>
+      {% endif %}
+    </ul>
+    <span class="ms-3">全{{ total }}件</span>
+  </nav>
+</div>
+{% endblock %}

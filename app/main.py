@@ -1,35 +1,32 @@
-from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
-from app.endpoints import auth as web_auth_api
-from app.endpoints import stock_search as web_stock_search_api
-from app.endpoints import recommend as web_recommend_api
-from app.endpoints import trade as web_trade_api
-from app.api.v1.endpoints import api_analyze as api_analyze_api
-from app.utils.fetch_jpx_listed_companies import fetch_and_import_jpx_listed_companies
-from app.database import Base, engine
+# main.py : 自動生成されたモジュール
+# このファイルに対応する処理を記述してください。
+
+from flask import Flask
+from flask_login import LoginManager
+from app.views.auth_view import auth_bp
+from app.views.stock_view import stock_bp
 from app.models.user_model import User
-from app.models.login_history_model import LoginHistory
-from app.models.stock_search_history_model import StockSearchHistory
-from app.models.holding_model import Holding
-from app.models.trade_history_model import TradeHistory
-from app.models.stock_master_model import StockMaster
-from app.endpoints import admin as admin_api
 
-# サーバー起動時に一度だけ会社一覧を取得
-fetch_and_import_jpx_listed_companies()
+app = Flask(__name__)
+app.secret_key = 'your_secret_key'  # セッション管理用
 
-# サーバー起動時に一度だけテーブル作成（Hobbyプラン用）
-Base.metadata.create_all(bind=engine)
+# LoginManagerセットアップ
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'auth.login'  # 未ログイン時のリダイレクト先
 
-app = FastAPI()
+@login_manager.user_loader
+def load_user(user_id):
+    from app.core.db import Session
+    session = Session()
+    user = session.query(User).get(int(user_id))
+    session.close()
+    return user
 
-# 静的ファイルとルーティング登録
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
-app.include_router(web_auth_api.router)
-app.include_router(web_stock_search_api.router)
-app.include_router(web_recommend_api.router)
-app.include_router(web_trade_api.router)
-app.include_router(api_analyze_api.router)
-app.include_router(admin_api.router)
-# app.include_router(auth_api.router)  # ←API用authは今後JSON専用にする場合のみ残す
-# app.include_router(stock_search_api.router)  # ←API用のみ残す場合はコメントアウト
+# Blueprint登録
+app.register_blueprint(auth_bp)
+app.register_blueprint(stock_bp)
+
+if __name__ == '__main__':
+    app.run(debug=True)
+

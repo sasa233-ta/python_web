@@ -1,9 +1,3 @@
-from pydantic import BaseModel
+# user_schema.py : 自動生成されたモジュール
+# このファイルに対応する処理を記述してください。
 
-class UserCreate(BaseModel):
-    username: str
-    password: str
-
-class UserLogin(BaseModel):
-    username: str
-    password: str

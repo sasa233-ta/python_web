@@ -1,10 +1,17 @@
-from fastapi.templating import Jinja2Templates
+from dotenv import load_dotenv
+import os
 
-# テンプレート設定
-templates = Jinja2Templates(directory="app/templates")
+# .envファイルを読み込む
+load_dotenv()
 
-# セッション設定
-USER_SESSION_COOKIE_NAME = "user_id"
-ADMIN_SESSION_COOKIE_NAME = "admin_id"
-SESSION_COOKIE_MAX_AGE = 60 * 60 * 24  # 1日（秒単位）
-SESSION_COOKIE_HTTPONLY = True
+# MySQL接続情報（必要に応じて修正）
+DB_USER = os.getenv('DB_USER')  # ユーザー名
+DB_PASSWORD = os.getenv('DB_PASSWORD')  # パスワード
+DB_HOST = os.getenv('DB_HOST')  # ホスト
+DB_PORT = os.getenv('DB_PORT')  # ポート
+DB_NAME = os.getenv('DB_NAME')  # データベース名
+DB_CHARSET = os.getenv('DB_CHARSET')  # 文字コード
+
+# JWTシークレットキー（必要に応じて修正）
+JWT_SECRET = os.getenv('JQUANTS_REFRESH_TOKEN')
+
